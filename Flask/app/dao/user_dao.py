@@ -96,7 +96,7 @@ class UserDb:
                 logging.critical('app/dao/user_dao.py -> delete_user_by_cpf')
                 logging.critical('-'*20)
                 
-                return None
+                return False
 
             else:
 
@@ -151,7 +151,7 @@ class UserDb:
                 logging.critical('app/dao/user_dao.py -> update_user')
                 logging.critical('-'*20)
                 
-                return None
+                return False
 
             else:
 
@@ -196,7 +196,7 @@ class UserDb:
                 logging.critical('app/dao/user_dao.py -> get_user_id_by_cpf')
                 logging.critical('-'*20)
                 
-                return None
+                return False
 
             else:
 
@@ -239,7 +239,7 @@ class UserDb:
                 logging.critical('error in DataBase')
                 logging.critical('app/dao/user_dao.py -> get_user_id_by_cpf')
                 
-                return None
+                return False
 
             else:  
 
@@ -281,7 +281,7 @@ class UserDb:
                 logging.critical('error in DataBase')
                 logging.critical('app/dao/user_dao.py -> get_password_by_email')
             
-                return None
+                return False
 
             else:
 
@@ -293,10 +293,10 @@ class UserDb:
 
         query = sql.SQL(
             '''
-            select user_token, create_date 
+            select user_token, create_date from two_auth
             where
             id_user = {id_user}
-            .
+            ;
             '''
         ).format(
             id_user=sql.Literal(id_user)
@@ -314,7 +314,7 @@ class UserDb:
                 logging.critical('error in DataBase')
                 logging.critical('app/dao/user_dao.py -> verify_if_user_have_token')
             
-                return None
+                return False
 
             else:
 
@@ -363,7 +363,7 @@ class UserDb:
                 logging.critical('app/dao/user_dao.py -> save_code_in_db')
                 logging.critical('-'*20)
                 
-                return None
+                return False
 
             else:
 
@@ -411,7 +411,7 @@ class UserDb:
                 logging.critical('app/dao/user_dao.py -> save_token_in_db')
                 logging.critical('-'*20)
                 
-                return None
+                return False
 
             else:
 
@@ -446,7 +446,7 @@ class UserDb:
                 logging.critical('app/dao/user_dao.py -> delete_jwt_by_id')
                 logging.critical('-'*20)
                 
-                return None
+                return False
 
             else:
 
@@ -481,7 +481,7 @@ class UserDb:
                 logging.critical('app/dao/user_dao.py -> delete_code_by_id')
                 logging.critical('-'*20)
                 
-                return None
+                return False
 
             else:
 

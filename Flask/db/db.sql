@@ -13,15 +13,17 @@ nick_name varchar(255) not null
 create table two_auth(
 id_token serial primary key not null,
 id_user int not null,
-user_token varchar(255),
+user_token varchar(300),
 create_date date,
+flag varchar(50),
 FOREIGN KEY(id_user) REFERENCES users(id_user)
 );
 
 create table revoked_token(
 id_token int,
 id_user int,
-user_token varchar(255),
+user_token varchar(300),
+flag varchar(50),
 FOREIGN KEY(id_user) REFERENCES users(id_user),
 FOREIGN KEY(id_token) REFERENCES two_auth(id_token)
 );

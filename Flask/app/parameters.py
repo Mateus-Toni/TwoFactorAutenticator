@@ -19,6 +19,12 @@ PASSWORD = os.environ.get('PASSWORD')
 SECRET_KEY = os.environ.get('SECRET_KEY')
 ACCESS_EXPIRES = os.environ.get('ACCESS_EXPIRES')
 APP_PORT = os.environ.get('APP_PORT')
+#=====================
+
+#email config
+#---------------------
+USER_EMAIL=os.environ.get('USER_EMAIL')
+PASSWORD_EMAIL=os.environ.get('PASSWORD_EMAIL')
 
 #layouts
 CODE_LAYOUT = '''

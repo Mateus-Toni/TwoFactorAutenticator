@@ -2,7 +2,12 @@ from random import randint
 from datetime import timedelta, datetime
 
 from flask import Flask, request
-from flask_jwt_extended import create_access_token, jwt_required, JWTManager
+from werkzeug.security import check_password_hash
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
+from flask_jwt_extended import get_jwt
+from flask_jwt_extended import get_jwt_identity
 from werkzeug.security import check_password_hash
 
 import parameters
@@ -14,6 +19,7 @@ app = Flask(__name__)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = parameters.ACCESS_EXPIRES
 app.config["JWT_SECRET_KEY"] = parameters.SECRET_KEY
 app.debug = True
+jwt = JWTManager(app)
 
 @app.route('/')
 def healthy():
@@ -50,19 +56,13 @@ def login():
 
                 jwt = token_data['user_token']
 
-                create_data = token_data['create_data']
+                create_data = token_data['create_date']
 
-                date_now = datetime.now()
+                date_now = datetime.now().date()
                 
                 if (date_now - create_data).days <= 3:
 
-                    if jwt['two_auth']:
-
-                        return {'msg': jwt}, 200
-
-                    else:
-
-                        return {'msg': 'two auth is false'}, 400
+                    return {'msg': jwt}, 200
 
                 else:
 
@@ -79,7 +79,7 @@ def login():
 
                     if saved and token_success:
 
-                        send_email(email, parameters.CODE_LAYOUT.format(code=code))
+                        #send_email(email, parameters.CODE_LAYOUT.format(code=code))
 
                         return {'msg': access_token}, 200
 
@@ -104,7 +104,7 @@ def login():
 
                     if saved and token_success:
 
-                        send_email(email, parameters.CODE_LAYOUT.format(code=code))
+                        #send_email(email, parameters.CODE_LAYOUT.format(code=code))
 
                         return {'msg': access_token}, 200
 
@@ -119,8 +119,6 @@ def login():
         else:
 
             return {'msg': 'wrong input'}, 400
-
-
 
 
 @app.route('/register', methods=['POST'])
