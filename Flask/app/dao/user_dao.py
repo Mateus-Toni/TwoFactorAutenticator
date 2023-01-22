@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from psycopg2 import sql
 
@@ -45,11 +46,11 @@ class UserDb:
 
             except Exception as r:
 
-                logging.CRITICAL('-'*20)
-                logging.CRITICAL(r)
-                logging.CRITICAL('error in DataBase')
-                logging.CRITICAL('app/dao/user_dao.py -> create_user_in_db')
-                logging.CRITICAL('-'*20)
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> create_user_in_db')
+                logging.critical('-'*20)
                 
                 return False
 
@@ -89,11 +90,11 @@ class UserDb:
 
             except Exception as r:
 
-                logging.CRITICAL('-'*20)
-                logging.CRITICAL(r)
-                logging.CRITICAL('error in DataBase')
-                logging.CRITICAL('app/dao/user_dao.py -> delete_user_by_cpf')
-                logging.CRITICAL('-'*20)
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> delete_user_by_cpf')
+                logging.critical('-'*20)
                 
                 return None
 
@@ -144,11 +145,11 @@ class UserDb:
 
             except Exception as r:
 
-                logging.CRITICAL('-'*20)
-                logging.CRITICAL(r)
-                logging.CRITICAL('error in DataBase')
-                logging.CRITICAL('app/dao/user_dao.py -> update_user')
-                logging.CRITICAL('-'*20)
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> update_user')
+                logging.critical('-'*20)
                 
                 return None
 
@@ -189,11 +190,11 @@ class UserDb:
 
             except Exception as r:
 
-                logging.CRITICAL('-'*20)
-                logging.CRITICAL(r)
-                logging.CRITICAL('error in DataBase')
-                logging.CRITICAL('app/dao/user_dao.py -> get_user_id_by_cpf')
-                logging.CRITICAL('-'*20)
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> get_user_id_by_cpf')
+                logging.critical('-'*20)
                 
                 return None
 
@@ -234,9 +235,9 @@ class UserDb:
 
             except Exception as r:
 
-                logging.CRITICAL(r)
-                logging.CRITICAL('error in DataBase')
-                logging.CRITICAL('app/dao/user_dao.py -> get_user_id_by_cpf')
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> get_user_id_by_cpf')
                 
                 return None
 
@@ -244,6 +245,245 @@ class UserDb:
 
                 return bool(cursor.fetchall())
 
-        
+    
+    @staticmethod
+    def get_id_and_password_by_email(email: str) -> dict:
+        """
+        _summary_
 
+        Args:
+            email (str): _description_
+
+        Returns:
+            dict: _description_
+        """
+
+        query = sql.SQL(
+            '''
+            select id_user, password_user from users
+            where 
+            email = {email}
+            ;
+            '''
+        ).format(
+            email=sql.Literal(email)
+        )
+
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> get_password_by_email')
+            
+                return None
+
+            else:
+
+                return cursor.fetchone()
+
+    
+    @staticmethod
+    def verify_if_user_have_token(id_user: int) -> dict:
+
+        query = sql.SQL(
+            '''
+            select user_token, create_date 
+            where
+            id_user = {id_user}
+            .
+            '''
+        ).format(
+            id_user=sql.Literal(id_user)
+        )
+
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> verify_if_user_have_token')
+            
+                return None
+
+            else:
+
+                return cursor.fetchone()
+
+    
+    @staticmethod
+    def save_code_in_db(code: int, id_user: int) -> bool:
+        """
+        _summary_
+
+        Args:
+            code (int): _description_
+            id_user (int): _description_
+
+        Returns:
+            bool: _description_
+        """
+
+        query = sql.SQL(
+            '''
+            insert into code_user 
+            (id_user, user_code, create_date, valid_code) 
+            values 
+            ({id_user}, {user_code}, {create_date}, {valid_code})
+            ;
+            '''
+        ).format(
+            id_user=sql.Literal(id_user),
+            user_code=sql.Literal(code),
+            create_date=sql.Literal(datetime.today().date()),
+            valid_code=sql.Literal('true')
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> save_code_in_db')
+                logging.critical('-'*20)
+                
+                return None
+
+            else:
+
+                return True
+
+    @staticmethod
+    def save_token_in_db(id_user: int, user_token) -> bool:
+        """
+        _summary_
+
+        Args:
+            id_user (int): _description_
+            user_token (_type_): _description_
+
+        Returns:
+            bool: _description_
+        """
+
+        query = sql.SQL(
+            '''
+            insert into two_auth 
+            (id_user, user_token, create_date) 
+            values 
+            ({id_user}, {user_token}, {create_date})
+            ;
+            '''
+        ).format(
+            id_user=sql.Literal(id_user),
+            user_token=sql.Literal(user_token),
+            create_date=sql.Literal(datetime.today().date()),
+            
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> save_token_in_db')
+                logging.critical('-'*20)
+                
+                return None
+
+            else:
+
+                return True
+
+    
+    @staticmethod
+    def delete_jwt_by_id(id_user):
+
+        query = sql.SQL(
+            '''
+            delete from two_auth 
+            where 
+            id_user = {id_user}
+            ;
+            '''
+        ).format(
+            id_user=sql.Literal(id_user),
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> delete_jwt_by_id')
+                logging.critical('-'*20)
+                
+                return None
+
+            else:
+
+                return True
+
+    
+    @staticmethod
+    def delete_code_by_id(id_user):
+
+        query = sql.SQL(
+            '''
+            delete from code_user 
+            where 
+            id_user = {id_user}
+            ;
+            '''
+        ).format(
+            id_user=sql.Literal(id_user),
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> delete_code_by_id')
+                logging.critical('-'*20)
+                
+                return None
+
+            else:
+
+                return True
 

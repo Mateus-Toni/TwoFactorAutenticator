@@ -25,3 +25,11 @@ user_token varchar(255),
 FOREIGN KEY(id_user) REFERENCES users(id_user),
 FOREIGN KEY(id_token) REFERENCES two_auth(id_token)
 );
+
+create table code_user(
+id_code serial primary key not null,
+id_user int not null,
+user_code char(6), 
+create_date date,
+FOREIGN KEY(id_user) REFERENCES users(id_user)
+);

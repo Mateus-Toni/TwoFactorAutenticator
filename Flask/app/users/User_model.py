@@ -1,5 +1,7 @@
-from dao.user_dao import UserDb
 
+from werkzeug.security import generate_password_hash
+
+from dao.user_dao import UserDb
 import users.utils as utils
 
 class User:
@@ -11,7 +13,7 @@ class User:
         self.last_name = last_name
         self.birth_day = birth_day
         self.cpf = cpf
-        self.password_user = password_user
+        self.password_user = generate_password_hash(password_user) 
         self.email  = email 
         self.nick_name = nick_name
 
