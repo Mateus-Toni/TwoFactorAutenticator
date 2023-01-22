@@ -2,7 +2,7 @@ import logging
 
 from psycopg2 import sql
 
-from dao import DataBase
+from dao.dao import DataBase
 from parameters import HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA
 
 class UserDb:
@@ -51,7 +51,7 @@ class UserDb:
                 logging.CRITICAL('app/dao/user_dao.py -> create_user_in_db')
                 logging.CRITICAL('-'*20)
                 
-                return None
+                return False
 
             else:
 
@@ -200,3 +200,50 @@ class UserDb:
             else:
 
                 return cursor.fetchall()['id_user']
+
+
+    @staticmethod
+    def verify_if_user_exists(user: object) -> bool:
+        """
+        _summary_
+
+        Args:
+            user (object): _description_
+
+        Returns:
+            bool: _description_
+        """
+
+        query = sql.SQL(
+            '''
+            select * from users
+            where 
+            cpf = {cpf}
+            ;
+            '''
+        ).format(
+            cpf=sql.Literal(user.cpf)
+        )
+
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+            
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.CRITICAL(r)
+                logging.CRITICAL('error in DataBase')
+                logging.CRITICAL('app/dao/user_dao.py -> get_user_id_by_cpf')
+                
+                return None
+
+            else:  
+
+                return bool(cursor.fetchall())
+
+        
+
+

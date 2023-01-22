@@ -1,6 +1,7 @@
 import logging
 
 import psycopg2
+from psycopg2 import extras
 
 class DataBase:
     
@@ -24,7 +25,7 @@ class DataBase:
                 port=self.port,
                 dbname=self.db
             )
-            self.cursor = self.db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            self.cursor = self.db.cursor(cursor_factory=extras.RealDictCursor)
             self.cursor.execute(f"set schema '{self.schema}'")
 
         except Exception as erro:
