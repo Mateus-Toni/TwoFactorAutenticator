@@ -22,7 +22,7 @@ FOREIGN KEY(id_user) REFERENCES users(id_user)
 create table revoked_token(
 id_token int,
 id_user int,
-user_token varchar(300),
+user_jti  varchar(300),
 flag varchar(50),
 FOREIGN KEY(id_user) REFERENCES users(id_user),
 FOREIGN KEY(id_token) REFERENCES two_auth(id_token)

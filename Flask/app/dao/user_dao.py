@@ -293,7 +293,7 @@ class UserDb:
 
         query = sql.SQL(
             '''
-            select user_token, create_date from two_auth
+            select id_token, user_token, create_date from two_auth
             where
             id_user = {id_user}
             ;
@@ -370,7 +370,7 @@ class UserDb:
                 return True
 
     @staticmethod
-    def save_token_in_db(id_user: int, user_token) -> bool:
+    def save_token_in_db(id_user: int, user_token, flag: str) -> bool:
         """
         _summary_
 
@@ -382,19 +382,21 @@ class UserDb:
             bool: _description_
         """
 
+        two_auth = 'true' if flag else 'false'
+
         query = sql.SQL(
             '''
             insert into two_auth 
-            (id_user, user_token, create_date) 
+            (id_user, user_token, create_date, flag) 
             values 
-            ({id_user}, {user_token}, {create_date})
+            ({id_user}, {user_token}, {create_date}, {flag})
             ;
             '''
         ).format(
             id_user=sql.Literal(id_user),
             user_token=sql.Literal(user_token),
             create_date=sql.Literal(datetime.today().date()),
-            
+            flag=sql.Literal(two_auth)
         )
         
         with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
@@ -409,41 +411,6 @@ class UserDb:
                 logging.critical(r)
                 logging.critical('error in DataBase')
                 logging.critical('app/dao/user_dao.py -> save_token_in_db')
-                logging.critical('-'*20)
-                
-                return False
-
-            else:
-
-                return True
-
-    
-    @staticmethod
-    def delete_jwt_by_id(id_user):
-
-        query = sql.SQL(
-            '''
-            delete from two_auth 
-            where 
-            id_user = {id_user}
-            ;
-            '''
-        ).format(
-            id_user=sql.Literal(id_user),
-        )
-        
-        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
-
-            try: 
-                
-                cursor.execute(query)
-
-            except Exception as r:
-
-                logging.critical('-'*20)
-                logging.critical(r)
-                logging.critical('error in DataBase')
-                logging.critical('app/dao/user_dao.py -> delete_jwt_by_id')
                 logging.critical('-'*20)
                 
                 return False
@@ -486,4 +453,79 @@ class UserDb:
             else:
 
                 return True
+
+    
+    @staticmethod
+    def get_code_by_id(id_user):
+
+        query = sql.SQL(
+            '''
+            select user_code, create_date from code_user 
+            where 
+            id_user = {id_user}
+            ;
+            '''
+        ).format(
+            id_user=sql.Literal(id_user),
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> delete_code_by_id')
+                logging.critical('-'*20)
+                
+                return False
+
+            else:
+
+                return cursor.fetchall()
+
+
+    @staticmethod
+    def revoked_token(jti, id_user, id_token):
+
+        query = sql.SQL(
+            '''
+            insert into revoked_token
+            (id_token, id_user, user_jti)
+            values
+            ({id_token}, {id_user}, {user_jti})
+            ;
+            '''
+        ).format(
+            id_token=sql.Literal(id_token),
+            id_user=sql.Literal(id_user),
+            user_jti=sql.Literal(jti)
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> revoked_token')
+                logging.critical('-'*20)
+                
+                return False
+
+            else:
+
+                return True
+
+
 

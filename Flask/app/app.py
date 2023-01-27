@@ -52,30 +52,32 @@ def login():
 
             token_data = UserDb.verify_if_user_have_token(id_user)
 
-            if token_data:
+            #jornada do revoked
+
+            if token_data and check_password_hash(password=password, pwhash=password_db):
 
                 jwt = token_data['user_token']
 
-                create_data = token_data['create_date']
+                create_date = token_data['create_date']
 
                 date_now = datetime.now().date()
                 
-                if (date_now - create_data).days <= 3:
+                if (date_now - create_date).days <= 3:
 
-                    return {'msg': jwt}, 200
+                    return {'msg': jwt}, 200 # verificar se o token nao foi revogado
 
                 else:
 
-                    UserDb.delete_jwt_by_id(id_user=id_user)
+                    UserDb.delete_jwt_by_id(id_user=id_user) #trocar para revogar token
                     UserDb.delete_code_by_id(id_user=id_user)
                     
                     code = randint(100000, 999999)
 
                     saved = UserDb.save_code_in_db(code=code, id_user=id_user)
 
-                    access_token = create_access_token(identity=id_user, additional_claims={'two_auth': False}, expires_delta=timedelta(days=1))
+                    access_token = create_access_token(identity=id_user, additional_claims={'two_auth': False, 'type': 'code'}, expires_delta=timedelta(days=1))
 
-                    token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token)
+                    token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token, flag=False)
 
                     if saved and token_success:
 
@@ -87,38 +89,100 @@ def login():
 
                         return {'msg': 'error in db'}, 400
             
-            else:
+            elif check_password_hash(password=password, pwhash=password_db):
 
-                if check_password_hash(password=password, pwhash=password_db):
+                UserDb.delete_jwt_by_id(id_user=id_user) #trocar para revogar token
+                UserDb.delete_code_by_id(id_user=id_user)
 
-                    UserDb.delete_jwt_by_id(id_user=id_user)
-                    UserDb.delete_code_by_id(id_user=id_user)
+                code = randint(100000, 999999)
 
-                    code = randint(100000, 999999)
+                saved = UserDb.save_code_in_db(code=code, id_user=id_user)
 
-                    saved = UserDb.save_code_in_db(code=code, id_user=id_user)
+                access_token = create_access_token(identity=id_user, additional_claims={'two_auth': False, 'type': 'code'}, expires_delta=timedelta(days=1))
 
-                    access_token = create_access_token(identity=id_user, additional_claims={'two_auth': False}, expires_delta=timedelta(days=1))
+                token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token, flag=False)
 
-                    token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token)
+                if saved and token_success:
 
-                    if saved and token_success:
+                    #send_email(email, parameters.CODE_LAYOUT.format(code=code))
 
-                        #send_email(email, parameters.CODE_LAYOUT.format(code=code))
-
-                        return {'msg': access_token}, 200
-
-                    else:
-
-                        return {'msg': 'error in db'}, 400
+                    return {'msg': access_token}, 200
 
                 else:
 
-                    return {'msg': 'wrong input'}, 400
+                    return {'msg': 'error in db'}, 400
+
+            else:
+
+                return {'msg': 'wrong input'}, 400
 
         else:
 
             return {'msg': 'wrong input'}, 400
+
+
+@app.route('/code', methods=['POST'])
+@jwt_required()
+def two_auth():
+    
+    id_user = get_jwt_identity()
+    jwt = get_jwt()
+
+    if (not jwt['two_auth']) and jwt['type'] == 'code':
+
+        try:
+
+            code = request.get_json()
+
+        except Exception as r:
+
+            return {'msg': 'missing json data'}, 400
+
+        else:
+
+            data_code = UserDb.get_code_by_id(id_user)
+
+            if str(code) == str(data_code['code']):
+                
+                if data_code['create_date'] <= data_code['create_date'] + timedelta(days=1):
+                    
+                    jti = get_jwt()['jti']
+
+                    revoked_old_token = UserDb.revoked_token(id_user=id_user, jti=jti)
+
+                    if revoked_old_token:
+
+                        DataBaseTwoAuth.delete_jwt_by_id_user(id_user)
+
+                        new_access_token = create_access_token(
+                            identity=id_user,
+                            expires_delta=timedelta(days=3),
+                            additional_claims={'two_auth': True, 'type': 'autorization'}
+                            )
+
+                        DataBaseTwoAuth.create_jwt(id_user=id_user, jwt=new_access_token)
+
+                        return {'access_token': new_access_token}, 200
+
+                else:
+
+                    return {'msg': 'invalid code'}, 400
+
+            else:
+
+                return {'msg': 'wrong code'}, 400
+
+    elif jwt['type'] == 'autorization' and jwt['two_auth']:
+
+        return {'msg': 'user have two_auth'}, 200
+
+    elif (not jwt['two_auth']) and jwt['type'] == 'password_recover':
+
+        ...
+
+
+
+
 
 
 @app.route('/register', methods=['POST'])
