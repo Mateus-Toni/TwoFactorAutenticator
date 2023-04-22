@@ -293,7 +293,7 @@ class UserDb:
 
         query = sql.SQL(
             '''
-            select id_token, user_token, create_date from two_auth
+            select id_token, user_token, create_date, flag from two_auth
             where
             id_user = {id_user}
             ;
@@ -382,8 +382,6 @@ class UserDb:
             bool: _description_
         """
 
-        two_auth = 'true' if flag else 'false'
-
         query = sql.SQL(
             '''
             insert into two_auth 
@@ -396,7 +394,7 @@ class UserDb:
             id_user=sql.Literal(id_user),
             user_token=sql.Literal(user_token),
             create_date=sql.Literal(datetime.today().date()),
-            flag=sql.Literal(two_auth)
+            flag=sql.Literal(flag)
         )
         
         with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
@@ -528,4 +526,46 @@ class UserDb:
                 return True
 
 
+    @staticmethod
+    def verify_if_token_is_revoked(id_token):
+        """
+        _summary_
+
+        Args:
+            id_token (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+
+        query = sql.SQL(
+            '''
+            select * from revoked_token
+            where
+            id_token = {id_token}
+            ;
+            '''
+        ).format(
+            id_token=sql.Literal(id_token),
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> revoked_token')
+                logging.critical('-'*20)
+                
+                return True
+
+            else:
+
+                return bool(cursor.fetchall())
 

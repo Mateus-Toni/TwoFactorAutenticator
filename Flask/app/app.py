@@ -52,19 +52,51 @@ def login():
 
             token_data = UserDb.verify_if_user_have_token(id_user)
 
-            #jornada do revoked
-
             if token_data and check_password_hash(password=password, pwhash=password_db):
 
-                jwt = token_data['user_token']
+                if not UserDb.verify_if_token_is_revoked(token_data['id_token']):
 
-                create_date = token_data['create_date']
+                    jwt = token_data['user_token']
 
-                date_now = datetime.now().date()
-                
-                if (date_now - create_date).days <= 3:
+                    create_date = token_data['create_date']
 
-                    return {'msg': jwt}, 200 # verificar se o token nao foi revogado
+                    date_now = datetime.now().date()
+                    
+                    if (date_now - create_date).days <= 3 and token_data['flag'] == 'two_auth':
+
+                        return {'msg': jwt}, 200
+
+                    elif token_data['flag'] == 'recover_password':
+
+                        return {'msg': 'recover password token: invalid token for login'}, 400
+
+                    elif token_data['flag'] == 'code':
+
+                        return {'msg': 'token for two auth: invalid token for login'}, 400
+
+                    elif (date_now - create_date).days > 3 and token_data['flag'] == 'two_auth':
+
+                        #adicionar token ao revogado
+                        UserDb.delete_jwt_by_id(id_user=id_user)
+                        UserDb.delete_code_by_id(id_user=id_user)
+                        
+                        code = randint(100000, 999999)
+
+                        saved = UserDb.save_code_in_db(code=code, id_user=id_user)
+
+                        access_token = create_access_token(identity=id_user, additional_claims={'two_auth': False, 'type': 'code'}, expires_delta=timedelta(days=1))
+
+                        token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token, flag='code')
+
+                        if saved and token_success:
+
+                            #send_email(email, parameters.CODE_LAYOUT.format(code=code))
+
+                            return {'msg': access_token}, 200
+
+                        else:
+
+                            return {'msg': 'error in db'}, 400
 
                 else:
 
@@ -77,7 +109,7 @@ def login():
 
                     access_token = create_access_token(identity=id_user, additional_claims={'two_auth': False, 'type': 'code'}, expires_delta=timedelta(days=1))
 
-                    token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token, flag=False)
+                    token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token, flag='code')
 
                     if saved and token_success:
 
@@ -91,16 +123,13 @@ def login():
             
             elif check_password_hash(password=password, pwhash=password_db):
 
-                UserDb.delete_jwt_by_id(id_user=id_user) #trocar para revogar token
-                UserDb.delete_code_by_id(id_user=id_user)
-
                 code = randint(100000, 999999)
 
                 saved = UserDb.save_code_in_db(code=code, id_user=id_user)
 
                 access_token = create_access_token(identity=id_user, additional_claims={'two_auth': False, 'type': 'code'}, expires_delta=timedelta(days=1))
 
-                token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token, flag=False)
+                token_success = UserDb.save_token_in_db(id_user=id_user, user_token=access_token, flag='code')
 
                 if saved and token_success:
 
@@ -179,10 +208,6 @@ def two_auth():
     elif (not jwt['two_auth']) and jwt['type'] == 'password_recover':
 
         ...
-
-
-
-
 
 
 @app.route('/register', methods=['POST'])
