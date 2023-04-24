@@ -4,6 +4,8 @@ crypt = CryptContext(schemes=['bcrypt'])
 
 def get_pwd_hash(password):
 
-    hash_password = crypt.hash(password)
+    return crypt.hash(password)
 
-    return hash_password
+def check_pwd_hash(password_hash, password):
+
+    return crypt.verify(password, password_hash)

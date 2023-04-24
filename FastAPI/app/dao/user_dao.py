@@ -242,7 +242,7 @@ class UserDb:
 
     
     @staticmethod
-    def get_id_and_password_by_email(email: User) -> dict:
+    def get_id_and_password_by_email(user: User) -> dict:
         """
         _summary_
 
@@ -261,7 +261,7 @@ class UserDb:
             ;
             '''
         ).format(
-            email=sql.Literal(email)
+            email=sql.Literal(user.username)
         )
 
         with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
