@@ -1,25 +1,34 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status, HTTPException
+from fastapi.responses import JSONResponse
 
-from models import user_models
+from models.user_models import User
+from dao.user_dao import UserDb
 
 router =  APIRouter()
 
 @router.post('/register')
-def register_user():
+def register_user(user: User):
 
-    return 'register'
+    # verificar infos usuario
 
-@router.post('/update')
-def update_user():
+    exist = UserDb.verify_if_user_exists(user)
 
-    return 'update'
+    if exist:
+        
+        sucess = UserDb.create_user_in_db(user)
 
-@router.post('/delete/{id_user}')
-def delete_user(id_user: int):
+        if sucess:
 
-    return f'delete user : {id_user}'
+            return JSONResponse(content={'msg': 'user create'},
+                                status_code=status.HTTP_201_CREATED)
+        
+        else:
 
-@router.post('/get_user/')
-def get_user(q: str):
+            return HTTPException(detail={'msg': 'error in db'},
+                            status_code=status.HTTP_401_UNAUTHORIZED)
 
-    return f'user {q}'
+    else:
+
+        raise HTTPException(detail={'msg': 'User already exists'},
+                            status_code=status.HTTP_401_UNAUTHORIZED)
+
