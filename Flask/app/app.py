@@ -24,7 +24,7 @@ jwt = JWTManager(app)
 @app.route('/')
 def healthy():
 
-    return {'msg': 'im alive'}
+    return {'msg': 'im alive'}, 200
 
 
 @app.route('/login', methods=['POST'])
