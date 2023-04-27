@@ -1,42 +1,27 @@
 from datetime import datetime, timedelta
-from random import randint
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import jwt, JWTError
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 import utils
+from models.user_models import Code
 from dao.user_dao import UserDb
 from parameters import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE
 
 router = APIRouter()
 
-def two_auth_journey(id_user: int):
-
-    code = randint(10000, 999999)
-    UserDb.save_code_in_db(code=code, id_user=id_user)
-    logging.info(code) #envia código no email
-
-    payload = {
-        'user_id': id_user,
-        'exp': datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE),
-        'type': 'code',
-        'two_auth': False
-    }
-
-    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-    
-    return token
-
+code = OAuth2PasswordBearer(tokenUrl="login")
+oauth2 = OAuth2PasswordBearer(tokenUrl="two_auth")
 
 @router.post('/login')
 def login(user: OAuth2PasswordRequestForm = Depends()):
 
     data_db = UserDb.get_id_and_password_by_email(user)# usuário cadastrado??
 
-    if data_db: # sim
+    if data_db:
 
         if utils.check_pwd_hash(password_hash=data_db['password_user'], password=user.password): # senha igual db
 
@@ -71,7 +56,7 @@ def login(user: OAuth2PasswordRequestForm = Depends()):
 
                 else: 
 
-                    access_token = two_auth_journey(data_db['id_user'])
+                    access_token = utils.two_auth_journey(data_db['id_user'])
                     
                     return JSONResponse(
                         content={'access_token': access_token, 'type': 'code'},
@@ -80,7 +65,7 @@ def login(user: OAuth2PasswordRequestForm = Depends()):
                 
             else:
 
-                access_token = two_auth_journey(data_db['id_user'])
+                access_token = utils.two_auth_journey(data_db['id_user'])
                 
                 return JSONResponse(
                     content={'access_token': access_token, 'type': 'code'},
@@ -96,3 +81,41 @@ def login(user: OAuth2PasswordRequestForm = Depends()):
 
         raise HTTPException(detail={'msg': 'invalid data'},
                             status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+async def verify_token_two_auth(token: str = Depends(code)):
+    
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        type_jwt = payload.get("type")
+        user = payload.get("user_id")
+
+        if type_jwt != 'code':
+
+            raise credentials_exception
+    
+    except JWTError:
+
+        raise credentials_exception
+    
+    #verificar c user existe
+    #verificar c token é revogado
+    #gerar esse squema para token two auth
+
+    if user:
+
+        return user
+    
+    raise credentials_exception
+    
+
+@router.post('/two_auth')
+def two_auth(code: Code, token: ):
+

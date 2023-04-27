@@ -1,7 +1,7 @@
 import logging
+
 import psycopg2
 from psycopg2 import extras
-
 
 class DataBase:
     

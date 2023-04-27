@@ -1,4 +1,4 @@
-from fastapi import APIRouter, FastAPI, status
+from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 from routes import auth
 from routes import user
@@ -6,7 +6,7 @@ from routes import user
 app = FastAPI()
 
 @app.get('/', tags=['Health Check'])
-def  health_check():
+def  health_check():  
 
     return JSONResponse(content={'msg': 'im ready'},
                         status_code=status.HTTP_200_OK)

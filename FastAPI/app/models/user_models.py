@@ -10,3 +10,8 @@ class User(BaseModel):
     email: str
     nick_name: str
 
+
+class Code(BaseModel):
+
+    code: str#colocar regex
+
