@@ -288,7 +288,7 @@ class UserDb:
 
         query = sql.SQL(
             '''
-            select id_token, user_token, create_date, flag from two_auth
+            select id_two_auth, two_auth, date_two_auth from two_auth
             where
             id_user = {id_user}
             ;
@@ -331,17 +331,16 @@ class UserDb:
 
         query = sql.SQL(
             '''
-            insert into code_user 
-            (id_user, user_code, create_date, valid_code) 
+            insert into two_auth 
+            (id_user, user_code, two_auth) 
             values 
-            ({id_user}, {user_code}, {create_date}, {valid_code})
+            ({id_user}, {user_code}, {two_auth})
             ;
             '''
         ).format(
             id_user=sql.Literal(id_user),
             user_code=sql.Literal(code),
-            create_date=sql.Literal(datetime.today().date()),
-            valid_code=sql.Literal('true')
+            two_auth=sql.Literal('false'),
         )
         
         with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
@@ -356,55 +355,6 @@ class UserDb:
                 logging.critical(r)
                 logging.critical('error in DataBase')
                 logging.critical('app/dao/user_dao.py -> save_code_in_db')
-                logging.critical('-'*20)
-                
-                return False
-
-            else:
-
-                return True
-
-
-    @staticmethod
-    def save_token_in_db(id_user: int, user_token, flag: str) -> bool:
-        """
-        _summary_
-
-        Args:
-            id_user (int): _description_
-            user_token (_type_): _description_
-
-        Returns:
-            bool: _description_
-        """
-
-        query = sql.SQL(
-            '''
-            insert into two_auth 
-            (id_user, user_token, create_date, flag) 
-            values 
-            ({id_user}, {user_token}, {create_date}, {flag})
-            ;
-            '''
-        ).format(
-            id_user=sql.Literal(id_user),
-            user_token=sql.Literal(user_token),
-            create_date=sql.Literal(datetime.today().date()),
-            flag=sql.Literal(flag)
-        )
-        
-        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
-
-            try: 
-                
-                cursor.execute(query)
-
-            except Exception as r:
-
-                logging.critical('-'*20)
-                logging.critical(r)
-                logging.critical('error in DataBase')
-                logging.critical('app/dao/user_dao.py -> save_token_in_db')
                 logging.critical('-'*20)
                 
                 return False
@@ -563,5 +513,39 @@ class UserDb:
 
             else:
 
-                return bool(cursor.fetchall())
+                return not bool(cursor.fetchall())
+            
 
+    def update_last_two_auth(id_two_auth):
+
+        query = sql.SQL(
+            '''
+            update two_auth
+            set two_auth = 'true', date_two_auth = {date}
+            where id_two_auth = {id_two_auth};
+            ;
+            '''
+        ).format(
+            date=sql.Literal(datetime.now().date()),
+            id_two_auth=sql.Literal(id_two_auth),
+        )
+        
+        with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
+
+            try: 
+                
+                cursor.execute(query)
+
+            except Exception as r:
+
+                logging.critical('-'*20)
+                logging.critical(r)
+                logging.critical('error in DataBase')
+                logging.critical('app/dao/user_dao.py -> revoked_token')
+                logging.critical('-'*20)
+                
+                return False
+
+            else:
+
+                return True

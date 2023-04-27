@@ -1,17 +1,16 @@
 from fastapi import APIRouter, FastAPI, status
 from fastapi.responses import JSONResponse
-
-from routes import user_routes, auth_routes
-
+from routes import auth
+from routes import user
 
 app = FastAPI()
 
-@app.get('/', tags=['Main - Health Check'])
+@app.get('/', tags=['Health Check'])
 def  health_check():
 
     return JSONResponse(content={'msg': 'im ready'},
                         status_code=status.HTTP_200_OK)
 
-app.include_router(user_routes.router, prefix='/user', tags=['User'])
-app.include_router(auth_routes.router, prefix='/auth', tags=['Autenticação'])
+app.include_router(user.router, prefix='/user', tags=['User'])
+app.include_router(auth.router, prefix='/auth', tags=['Autenticação'])
 
