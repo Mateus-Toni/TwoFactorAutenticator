@@ -473,7 +473,7 @@ class UserDb:
 
 
     @staticmethod
-    def verify_if_token_is_revoked(id_token):
+    def verify_if_token_is_revoked(id_user, token):
         """
         _summary_
 
@@ -488,11 +488,14 @@ class UserDb:
             '''
             select * from revoked_token
             where
-            id_token = {id_token}
+            id_user = {id_user}
+            and 
+            user_token = {token}
             ;
             '''
         ).format(
-            id_token=sql.Literal(id_token),
+            id_user=sql.Literal(id_user),
+            token=sql.Literal(token)
         )
         
         with DataBase(HOST, USER, PORT, PASSWORD, DATABASE, SCHEMA) as cursor:
@@ -513,7 +516,7 @@ class UserDb:
 
             else:
 
-                return not bool(cursor.fetchall())
+                return bool(cursor.fetchall())
             
 
     def update_last_two_auth(id_two_auth):

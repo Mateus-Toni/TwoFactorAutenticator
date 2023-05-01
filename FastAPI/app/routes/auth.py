@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from random import randint
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,8 +14,53 @@ from parameters import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE
 
 router = APIRouter()
 
-code = OAuth2PasswordBearer(tokenUrl="login")
-oauth2 = OAuth2PasswordBearer(tokenUrl="two_auth")
+oauth = OAuth2PasswordBearer(tokenUrl="login")
+
+def two_auth_journey(id_user: int, email: str):
+
+    code = randint(10000, 999999)
+    UserDb.save_code_in_db(code=code, id_user=id_user)
+    logging.info(code) #envia código no email
+
+    payload = {
+        'user_id': id_user,
+        'sub': email,
+        'exp': datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE),
+        'type': 'code',
+        'two_auth': False
+    }
+
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return token
+
+def verify_token(token: str = Depends(oauth)):
+
+    try:
+
+        payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+        user_email = payload['sub']
+        data_db = UserDb.get_id_and_password_by_email(user_email)
+        token_data = UserDb.verify_if_user_have_token(data_db['id_user'])
+
+        if not data_db and token_data:
+
+            raise HTTPException(detail={'msg': 'invalid token'}, 
+                             status_code=status.HTTP_401_UNAUTHORIZED)
+        
+        if UserDb.verify_if_token_is_revoked(data_db['id_user'], token):
+
+            raise HTTPException(detail={'msg': 'invalid token'}, 
+                             status_code=status.HTTP_401_UNAUTHORIZED)
+        
+        #add ip 
+
+    except JWTError:
+
+        raise HTTPException(detail={'msg': 'missing token'}, 
+                             status_code=status.HTTP_401_UNAUTHORIZED)
+    
+
 
 @router.post('/login')
 def login(user: OAuth2PasswordRequestForm = Depends()):
@@ -37,6 +83,7 @@ def login(user: OAuth2PasswordRequestForm = Depends()):
 
                     payload = {
                         'user_id': data_db['id_user'],
+                        'sub': user.username,
                         'exp': datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE),
                         'type': 'two_auth',
                         'two_auth': True
@@ -56,7 +103,7 @@ def login(user: OAuth2PasswordRequestForm = Depends()):
 
                 else: 
 
-                    access_token = utils.two_auth_journey(data_db['id_user'])
+                    access_token = two_auth_journey(data_db['id_user'], user.username)
                     
                     return JSONResponse(
                         content={'access_token': access_token, 'type': 'code'},
@@ -65,7 +112,7 @@ def login(user: OAuth2PasswordRequestForm = Depends()):
                 
             else:
 
-                access_token = utils.two_auth_journey(data_db['id_user'])
+                access_token = two_auth_journey(data_db['id_user'], user.username)
                 
                 return JSONResponse(
                     content={'access_token': access_token, 'type': 'code'},
@@ -82,40 +129,6 @@ def login(user: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(detail={'msg': 'invalid data'},
                             status_code=status.HTTP_401_UNAUTHORIZED)
 
-
-async def verify_token_two_auth(token: str = Depends(code)):
-    
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    try:
-
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        type_jwt = payload.get("type")
-        user = payload.get("user_id")
-
-        if type_jwt != 'code':
-
-            raise credentials_exception
-    
-    except JWTError:
-
-        raise credentials_exception
-    
-    #verificar c user existe
-    #verificar c token é revogado
-    #gerar esse squema para token two auth
-
-    if user:
-
-        return user
-    
-    raise credentials_exception
-    
-
 @router.post('/two_auth')
-def two_auth(code: Code, token: ):
-
+def two_auth(code: Code, token: str = Depends(verify_token)):
+    ...
