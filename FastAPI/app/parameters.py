@@ -7,6 +7,7 @@ load_dotenv()
 SECRET_KEY = os.environ.get('SECRET_KEY')
 ALGORITHM = os.environ.get('ALGORITHM')
 ACCESS_TOKEN_EXPIRE = os.environ.get('ACCESS_TOKEN_EXPIRE')
+ACCESS_CODE_EXPIRE = os.environ.get('ACCESS_CODE_EXPIRE')
 
 #Data Base
 DATABASE = os.environ.get('DATABASE')

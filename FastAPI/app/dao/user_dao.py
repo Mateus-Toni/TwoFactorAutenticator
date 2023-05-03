@@ -404,7 +404,7 @@ class UserDb:
 
         query = sql.SQL(
             '''
-            select user_code, create_date from code_user 
+            select id_two_auth, user_code, date_two_auth from code_user 
             where 
             id_user = {id_user}
             ;
